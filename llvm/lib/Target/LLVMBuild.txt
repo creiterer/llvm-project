@@ -30,6 +30,7 @@ subdirectories =
  NVPTX
  Mips
  PowerPC
+ PROL16
  RISCV
  Sparc
  SystemZ
