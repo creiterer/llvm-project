@@ -32,6 +32,7 @@ subdirectories =
  Mips
  Nios2
  PowerPC
+ PROL16
  RISCV
  Sparc
  SystemZ
