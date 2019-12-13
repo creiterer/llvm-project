@@ -97,6 +97,7 @@ bool PROL16DAGToDAGISel::SelectAddress(SDValue const &address, SDValue &destinat
 		destination = CurDAG->getTargetFrameIndex(cast<FrameIndexSDNode>(address)->getIndex(),
 										   getTargetLowering()->getPointerTy(CurDAG->getDataLayout()));
 		return true;
+
 	default:
 		address.dump();
 		llvm_unreachable("Unexpected opcode when selecting address (PROL16DAGToDAGISel::SelectAddress())");
@@ -115,12 +116,15 @@ bool PROL16DAGToDAGISel::SelectAddressWithDisplacement(SDValue const &address, S
 										   getTargetLowering()->getPointerTy(CurDAG->getDataLayout()));
 		displacement = CurDAG->getTargetConstant(0, SDLoc(address), MVT::i16);
 		return true;
+
 	case ISD::OR:
+	case ISD::ADD:
 		base = CurDAG->getTargetFrameIndex(cast<FrameIndexSDNode>(address.getOperand(0))->getIndex(),
 												   getTargetLowering()->getPointerTy(CurDAG->getDataLayout()));
 		displacement = CurDAG->getTargetConstant(cast<ConstantSDNode>(address.getOperand(1))->getSExtValue(),
 												 SDLoc(address), MVT::i16);
 		return true;
+
 	default:
 		address.dump();
 		llvm_unreachable("Unexpected opcode when selecting address (PROL16DAGToDAGISel::SelectAddressWithDisplacement())");
