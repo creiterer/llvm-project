@@ -140,11 +140,7 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 		assert(nextMachineInstruction->getOpcode() == PROL16::LOADI && "unexpected non-loadi instruction for frame index elimination");
 		frameOffset += nextMachineInstruction->getOperand(1).getImm();
 
-		if (std::abs(frameOffset) % 2 != 0) {
-			llvm_unreachable("Encountered uneven frame offset during frame index elimination!");
-		}
-
-		nextMachineInstruction->getOperand(1).setImm(std::abs(frameOffset) / 2);
+		nextMachineInstruction->getOperand(1).setImm(calcAbsoluteFrameOffset(frameOffset));
 	} else if ((machineInstruction.getOpcode() == PROL16::STORE) || (machineInstruction.getOpcode() == PROL16::LOAD)) {
 		/**
 		 * Frame Index Elimination for Conventional LOAD/STORE Instructions
@@ -164,13 +160,9 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 
 		unsigned const offsetRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
 
-		if (std::abs(frameOffset) % 2 != 0) {
-			llvm_unreachable("Encountered uneven frame offset during frame index elimination!");
-		}
-
 		// insert instruction to load the offset into a register
 		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-			.addImm(std::abs(frameOffset) / 2);
+			.addImm(calcAbsoluteFrameOffset(frameOffset));
 
 		// since the stack grows down, the offset is usually negative!
 		if (frameOffset < 0) {
@@ -211,4 +203,30 @@ bool PROL16RegisterInfo::requiresRegisterScavenging(const MachineFunction &MF) c
 bool PROL16RegisterInfo::requiresFrameIndexScavenging(MachineFunction const &MF) const {
 	// needed to scavenge virtual registers inserted by frame index elimination
 	return true;
+}
+
+unsigned PROL16RegisterInfo::calcAbsoluteFrameOffset(int const frameOffset) const {
+	/**
+	 * Uneven frame offsets can occur with types > 16 bit!
+	 * For example, using a 32-bit integer resulted in:
+	 * 		alloc FI(0) at SP[-8]
+	 * 		alloc FI(1) at SP[-9]
+	 *		alloc FI(2) at SP[-12]
+	 * 		alloc FI(3) at SP[-16]
+	 * 		alloc FI(4) at SP[-18]
+	 *
+	 * Since the alignment ensures that the next value (SP[-12]) after the 32-bit value (SP[-8]) is allocated
+	 * at SP[x-4], there is no problem with the approach of using x/2 for the frame offset (except, of course, that
+	 * for uneven frame offsets the value has to be x/2 + 1).
+	 *
+	 * So, the result is:
+	 * 		alloc FI(0) at SP[-4]
+	 * 		alloc FI(1) at SP[-5]
+	 *		alloc FI(2) at SP[-6]
+	 * 		alloc FI(3) at SP[-8]
+	 * 		alloc FI(4) at SP[-9]
+	 */
+	unsigned const absoluteFrameOffset = std::abs(frameOffset);
+
+	return absoluteFrameOffset / 2 + absoluteFrameOffset % 2;
 }

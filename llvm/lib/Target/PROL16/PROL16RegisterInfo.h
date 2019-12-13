@@ -68,6 +68,8 @@ public:
 	/// Returns true if the target requires post PEI scavenging of registers for
 	/// materializing frame index constants.
 	bool requiresFrameIndexScavenging(MachineFunction const &MF) const override;
+
+	unsigned calcAbsoluteFrameOffset(int const frameOffset) const;
 };
 
 } // end namespace llvm
