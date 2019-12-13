@@ -155,6 +155,16 @@ func (c *compiler) logf(format string, v ...interface{}) {
 func (c *compiler) addCommonFunctionAttrs(fn llvm.Value) {
 	fn.AddTargetDependentFunctionAttr("disable-tail-calls", "true")
 	fn.AddTargetDependentFunctionAttr("split-stack", "")
+	
+	// Attribute 'optnone' requires 'noinline'!
+	noinlineAttr := c.module.Context().CreateEnumAttribute(llvm.AttributeKindID("noinline"), 0)
+	fn.AddFunctionAttr(noinlineAttr)
+	
+	optnoneAttr := c.module.Context().CreateEnumAttribute(llvm.AttributeKindID("optnone"), 0)
+	fn.AddFunctionAttr(optnoneAttr)
+	
+//	fn.AddTargetDependentFunctionAttr("no-frame-pointer-elim", "true")
+//	fn.AddTargetDependentFunctionAttr("no-frame-pointer-elim-non-leaf", "")
 	if c.SanitizerAttribute.GetEnumKind() != 0 {
 		fn.AddFunctionAttr(c.SanitizerAttribute)
 	}
