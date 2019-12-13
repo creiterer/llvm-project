@@ -29,11 +29,31 @@ func (fr *frame) printValues(println_ bool, values ...*govalue) {
 		}
 
 		if println_ && i > 0 {
-			fr.runtime.printSpace.call(fr)
+//			fr.runtime.printSpace.call(fr)
+			fr.runtime.prol16PrintSpace.call(fr)
 		}
 		switch typ := typ.(type) {
 		case *types.Basic:
 			switch typ.Kind() {
+			case types.Uint8, types.Uint16:
+				i16 := fr.llvmtypes.ctx.Int16Type()
+				zext := fr.builder.CreateZExt(llvm_value, i16, "")
+				fr.runtime.prol16PrintUint16.call(fr, zext)
+
+			case types.Uint32:
+				i32 := fr.llvmtypes.ctx.Int32Type()
+				zext := fr.builder.CreateZExt(llvm_value, i32, "")
+				fr.runtime.prol16PrintUint32.call(fr, zext)
+				
+			case types.Rune:	// rune is an alias for int32!
+				i32 := fr.llvmtypes.ctx.Int32Type()
+				sext := fr.builder.CreateSExt(llvm_value, i32, "")
+				fr.runtime.prol16PrintRune.call(fr, sext)				
+				
+			case types.String, types.UntypedString:
+				fr.runtime.prol16PrintString.call(fr, llvm_value) 
+				
+/*	@PROL16				
 			case types.Uint8, types.Uint16, types.Uint32, types.Uintptr, types.Uint, types.Uint64:
 				i64 := fr.llvmtypes.ctx.Int64Type()
 				zext := fr.builder.CreateZExt(llvm_value, i64, "")
@@ -64,11 +84,12 @@ func (fr *frame) printValues(println_ bool, values ...*govalue) {
 
 			case types.UnsafePointer:
 				fr.runtime.printPointer.call(fr, llvm_value)
-
+*/
+				
 			default:
-				panic(fmt.Sprint("Unhandled Basic Kind: ", typ.Kind))
+				panic(fmt.Sprintf("Unhandled Basic Kind: %s (%T)", typ, typ))
 			}
-
+/*	@PROL16
 		case *types.Interface:
 			if typ.Empty() {
 				fr.runtime.printEmptyInterface.call(fr, llvm_value)
@@ -81,12 +102,14 @@ func (fr *frame) printValues(println_ bool, values ...*govalue) {
 
 		case *types.Pointer, *types.Map, *types.Chan, *types.Signature:
 			fr.runtime.printPointer.call(fr, llvm_value)
+*/
 
 		default:
 			panic(fmt.Sprintf("Unhandled type kind: %s (%T)", typ, typ))
 		}
 	}
 	if println_ {
-		fr.runtime.printNl.call(fr)
+//		fr.runtime.printNl.call(fr)
+		fr.runtime.prol16PrintNl.call(fr)
 	}
 }

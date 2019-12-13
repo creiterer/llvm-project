@@ -124,6 +124,14 @@ type runtimeInterface struct {
 	stringToIntArray,
 	typeDescriptorsEqual,
 	undefer runtimeFnInfo
+
+	// PROL16-specific runtime intrinsics
+	prol16PrintUint16,
+	prol16PrintUint32,
+	prol16PrintRune,
+	prol16PrintString,
+	prol16PrintNl,
+	prol16PrintSpace runtimeFnInfo
 }
 
 func newRuntimeInterface(module llvm.Module, tm *llvmTypeMap) (*runtimeInterface, error) {
@@ -134,6 +142,8 @@ func newRuntimeInterface(module llvm.Module, tm *llvmTypeMap) (*runtimeInterface
 	Float64 := types.Typ[types.Float64]
 	Int32 := types.Typ[types.Int32]
 	Int64 := types.Typ[types.Int64]
+	Uint16 := types.Typ[types.Uint16]
+	Uint32 := types.Typ[types.Uint32]
 	Int := types.Typ[types.Int]
 	Rune := types.Typ[types.Rune]
 	String := types.Typ[types.String]
@@ -502,6 +512,34 @@ func newRuntimeInterface(module llvm.Module, tm *llvmTypeMap) (*runtimeInterface
 			name: "__go_undefer",
 			rfi:  &ri.undefer,
 			args: []types.Type{UnsafePointer},
+		},
+		{
+			name: "__prol16_print_uint16",
+			rfi:  &ri.prol16PrintUint16,
+			args: []types.Type{Uint16},
+		},
+		{
+			name: "__prol16_print_uint32",
+			rfi:  &ri.prol16PrintUint32,
+			args: []types.Type{Uint32},
+		},
+		{
+			name: "__prol16_print_rune",
+			rfi:  &ri.prol16PrintRune,
+			args: []types.Type{Rune},
+		},
+		{
+			name: "__prol16_print_string",
+			rfi:  &ri.prol16PrintString,
+			args: []types.Type{String},
+		},
+		{
+			name: "__prol16_print_nl",
+			rfi:  &ri.prol16PrintNl,
+		},
+		{
+			name: "__prol16_print_space",
+			rfi:  &ri.prol16PrintSpace,
 		},
 	} {
 		rt.rfi.init(tm, module, rt.name, rt.args, rt.res)
