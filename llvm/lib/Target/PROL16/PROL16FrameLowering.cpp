@@ -49,6 +49,8 @@ void PROL16FrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &M
 
 	// get the number of bytes to allocate from the frame info
 	uint64_t const stackSize = machineFrameInfo.getStackSize();
+	if (stackSize == 0) { return; }
+
 	uint64_t stackPointerAdjustment = 0;
 
 	if (hasFP(MF)) {
@@ -99,6 +101,8 @@ void PROL16FrameLowering::emitEpilogue(MachineFunction &MF, MachineBasicBlock &M
 
 	// get the number of bytes to allocate from the frame info
 	uint64_t const stackSize = machineFrameInfo.getStackSize();
+	if (stackSize == 0) { return; }
+
 	uint64_t stackPointerAdjustment = 0;
 
 	if (hasFP(MF)) {
