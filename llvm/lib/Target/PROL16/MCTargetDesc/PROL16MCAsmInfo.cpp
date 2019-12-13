@@ -29,10 +29,19 @@ PROL16MCAsmInfo::PROL16MCAsmInfo(Triple const &targetTriple) {
 	/// This directive allows emission of an ascii string with the standard C
 	/// escape characters embedded into it.  If a target doesn't support this, it
 	/// can be set to null. Defaults to "\t.ascii\t"
-	AsciiDirective = nullptr;
+	AsciiDirective = "db\t";
 
 	/// If not null, this allows for special handling of zero terminated strings
 	/// on this target.  This is commonly supported as ".asciz".  If a target
 	/// doesn't support this, it can be set to null.  Defaults to "\t.asciz\t"
 	AscizDirective = "db\t";
+
+	/// These directives are used to output some unit of integer data to the
+	/// current section.  If a data directive is set to null, smaller data
+	/// directives will be used to emit the large sizes.  Defaults to "\t.byte\t",
+	/// "\t.short\t", "\t.long\t", "\t.quad\t"
+	Data8bitsDirective = "db\t";
+	Data16bitsDirective = "db\t";
+	Data32bitsDirective = nullptr;
+	Data64bitsDirective = nullptr;
 }
