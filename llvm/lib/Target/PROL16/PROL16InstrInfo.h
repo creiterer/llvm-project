@@ -74,6 +74,8 @@ private:
 	void emitJumpCall(MachineInstr &machineInstruction) const;
 
 	void emitJumpConditional(MachineInstr &machineInstruction) const;
+
+	void emitImplicitDef(MachineInstr &machineInstruction) const;
 };
 
 }

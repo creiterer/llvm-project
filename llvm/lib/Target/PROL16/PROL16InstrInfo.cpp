@@ -107,6 +107,9 @@ bool PROL16InstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
 	case PROL16::JUMPcc:
 		emitJumpConditional(MI);
 		return true;
+	case PROL16::IMPLICIT_DEF:
+		emitImplicitDef(MI);
+		return true;
 	}
 
 	return false;
@@ -229,6 +232,23 @@ void PROL16InstrInfo::emitJumpConditional(MachineInstr &machineInstruction) cons
 	default:
 		llvm_unreachable("Invalid PROL16 condition code");
 	}
+
+	machineInstruction.eraseFromParent();
+}
+
+void PROL16InstrInfo::emitImplicitDef(MachineInstr &machineInstruction) const {
+	LLVM_DEBUG(dbgs() << "PROL16InstrInfo::emitImplicitDef()\n");
+	LLVM_DEBUG(machineInstruction.dump());
+
+	DebugLoc debugLocation = machineInstruction.getDebugLoc();
+	MachineBasicBlock *machineBasicBlock = machineInstruction.getParent();
+	TargetInstrInfo const &targetInstrInfo = *(machineBasicBlock->getParent()->getSubtarget().getInstrInfo());
+
+	unsigned const reg = machineInstruction.getOperand(0).getReg();
+
+	// Load 0 into implicitly defined registers
+	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOADI), reg)
+		.addImm(0);
 
 	machineInstruction.eraseFromParent();
 }
