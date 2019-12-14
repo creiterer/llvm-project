@@ -103,11 +103,17 @@ PROL16TargetLowering::PROL16TargetLowering(TargetMachine const &targetMachine, P
 	setOperationAction(ISD::SDIV, MVT::i16, LibCall);
 	setOperationAction(ISD::SREM, MVT::i16, LibCall);
 
-	setLibcallName(RTLIB::MUL_I32, "_mul");
-	setLibcallName(RTLIB::UDIV_I32, "_divu");
-	setLibcallName(RTLIB::SDIV_I32, "_div");
-	setLibcallName(RTLIB::UREM_I32, "_modu");
-	setLibcallName(RTLIB::SREM_I32, "_mod");
+	setLibcallName(RTLIB::MUL_I16, "__prol16_mul_i16");
+	setLibcallName(RTLIB::UDIV_I16, "__prol16_udiv_i16");
+	setLibcallName(RTLIB::SDIV_I16, "__prol16_sdiv_i16");
+	setLibcallName(RTLIB::UREM_I16, "__prol16_urem_i16");
+	setLibcallName(RTLIB::SREM_I16, "__prol16_srem_i16");
+
+	setLibcallName(RTLIB::MUL_I32, "__prol16_mul_i32");
+	setLibcallName(RTLIB::UDIV_I32, "__prol16_udiv_i32");
+	setLibcallName(RTLIB::SDIV_I32, "__prol16_sdiv_i32");
+	setLibcallName(RTLIB::UREM_I32, "__prol16_urem_i32");
+	setLibcallName(RTLIB::SREM_I32, "__prol16_srem_i32");
 }
 
 char const* PROL16TargetLowering::getTargetNodeName(unsigned Opcode) const {
