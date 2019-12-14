@@ -425,6 +425,8 @@ SDValue PROL16TargetLowering::lowerCCall(CallLoweringInfo &callLoweringInfo, Sma
 	SDValue callee = callLoweringInfo.Callee;
 
 	LLVM_DEBUG(dbgs() << "DAG at beginning of PROL16TargetLowering::lowerCCall():\n");
+	LLVM_DEBUG(dbgs() << "callee: ");
+	LLVM_DEBUG(callee.dump());
 	LLVM_DEBUG(dag.dump());
 
 	// Analyze operands of the call, assigning locations to each operand.
@@ -519,6 +521,8 @@ SDValue PROL16TargetLowering::lowerCCall(CallLoweringInfo &callLoweringInfo, Sma
 							   inFlag, debugLocation);
 
 	LLVM_DEBUG(dbgs() << "DAG at end of PROL16TargetLowering::lowerCCall():\n");
+	LLVM_DEBUG(dbgs() << "callee: ");
+	LLVM_DEBUG(callee.dump());
 	LLVM_DEBUG(dag.dump());
 
 	// Handle result values, copying them out of physical registers into virtual registers that we return
@@ -530,6 +534,8 @@ SDValue PROL16TargetLowering::lowerCallResult(SDValue chain, CallLoweringInfo &c
 	SelectionDAG &dag = callLoweringInfo.DAG;
 
 	LLVM_DEBUG(dbgs() << "DAG at beginning of PROL16TargetLowering::lowerCallResult():\n");
+	LLVM_DEBUG(dbgs() << "callee: ");
+	LLVM_DEBUG(callLoweringInfo.Callee.dump());
 	LLVM_DEBUG(dag.dump());
 
 	// Assign locations to each value returned by this call.
@@ -551,6 +557,8 @@ SDValue PROL16TargetLowering::lowerCallResult(SDValue chain, CallLoweringInfo &c
 	}
 
 	LLVM_DEBUG(dbgs() << "DAG at end of PROL16TargetLowering::lowerCallResult():\n");
+	LLVM_DEBUG(dbgs() << "callee: ");
+	LLVM_DEBUG(callLoweringInfo.Callee.dump());
 	LLVM_DEBUG(dag.dump());
 
 	return chain;
