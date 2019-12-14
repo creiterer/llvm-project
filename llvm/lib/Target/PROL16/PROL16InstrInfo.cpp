@@ -206,12 +206,12 @@ void PROL16InstrInfo::emitJumpConditional(MachineInstr &machineInstruction) cons
 	case PROL16CC::NE: {
 		/// @see PROL16TargetLowering::emitJumpnz()
 		auto nextInstructionItor = std::next(MachineBasicBlock::iterator(machineInstruction));
-		assert(nextInstructionItor->getOpcode() == PROL16::BR && "jumpnz expansion: unexpected non-br instruction after jumpnz");
+		assert((nextInstructionItor->getOpcode() == PROL16::BR || nextInstructionItor->getOpcode() == PROL16::JUMP) && "jumpnz expansion: unexpected non-br instruction after jumpnz");
 
 		BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::JUMPZ))
-			.addReg(targetAddressRegister, RegState::Kill);
+			.add(nextInstructionItor->getOperand(0));
 
-		nextInstructionItor->getOperand(0) = machineInstruction.getOperand(0);
+		nextInstructionItor->getOperand(0).ChangeToRegister(targetAddressRegister, false, false, true);
 
 		break;
 	}
