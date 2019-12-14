@@ -241,12 +241,12 @@ let isBranch = 1, isTerminator = 1, isIndirectBranch = 1, isBarrier = 1 in {
 									  (outs), (ins GR16:$brdst),
 									  "jumpz\t{$brdst}",
 									  [(PROL16Jumpz GR16:$brdst)]>;
-	}
 	
-	def JUMPcc : PROL16PseudoInstruction<(outs), 
-									 	 (ins GR16:$dst, GR16:$lhs, GR16:$rhs, i16imm:$cc),
-									 	 "# JUMPcc PSEUDO!",
-									 	 []>;
+		def JUMPcc : PROL16PseudoInstruction<(outs), 
+										 	 (ins GR16:$dst, GR16:$lhs, GR16:$rhs, i16imm:$cc),
+										 	 "# JUMPcc PSEUDO!",
+										 	 []>;
+	}
 }
 
 let isCall = 1, Uses = [RPC, RRA, RSP] in {

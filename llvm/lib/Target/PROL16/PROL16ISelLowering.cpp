@@ -235,6 +235,7 @@ MachineBasicBlock* PROL16TargetLowering::EmitInstrWithCustomInserter(MachineInst
 		return emitDirectBranch(MI, MBB);
 	case PROL16::JUMPZ:
 	case PROL16::JUMPC:
+	case PROL16::JUMPcc:
 		return emitConditionalBranch(MI, MBB);
 	case PROL16::JUMPCZ:
 		return emitJumpcz(MI, MBB);
@@ -271,6 +272,7 @@ SDValue PROL16TargetLowering::lowerConditionalBranch(SDValue operation, Selectio
 	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::lowerConditionalBranch():\n");
 	LLVM_DEBUG(operation.dump());
 
+/*
 	PROL16CC::ConditionCode targetConditionCode = PROL16CC::INVALID;
 
 	SDValue flag = emitCompare(lhs, rhs, targetConditionCode, conditionCode, debugLocation, dag);
@@ -291,6 +293,48 @@ SDValue PROL16TargetLowering::lowerConditionalBranch(SDValue operation, Selectio
 	default:
 		llvm_unreachable("Invalid PROL16 condition code");
 	}
+*/
+	/**
+	 * The compare instruction and the corresponding conditional jump must stay together so that
+	 * no instructions, which potentially influence the status flags set by compare, get inserted between them.
+	 * Therefore, they need to stay together until after register allocation. Otherwise, the following problem occurs:
+	 *
+	 * Before register allocation (pseudo code):
+	 * 		compare				(COMP)
+	 * 		jump conditional	(JUMPC | JUMPZ)
+	 * 		jump				(JUMP)
+	 *
+	 * Register spilling inserts appropriate instructions before the first jump instruction, which leads to:
+	 * 		compare				(COMP)
+	 * 		store rx at stack.y
+	 * 		jump conditional	(JUMPC | JUMPZ)
+	 * 		jump				(JUMP)
+	 *
+	 * Frame index elimination eliminates the abstract stack location 'stack.y' by replacing it with something like:
+	 * 		compare				(COMP)
+	 * 		loadi	rz, offset	(LOADI)
+	 * 		move	ry, rsp		(MOVE)
+	 * 		sub		ry, rz		(SUB) 	<-- manipulates the status flags set by compare!
+	 * 		store	rx, ry		(STORE)
+	 * 		jump conditional	(JUMPC | JUMPZ)
+	 * 		jump				(JUMP)
+	 *
+	 * -> execution of the conditional jump is based on the status flags set by 'SUB' instead of 'COMP' which is wrong.
+	 * Therefore, it has to be ensured that compare and conditional jump stay together at least until after register spilling
+	 * -> emit 'JUMPcc', which is expanded within the scope of 'expandPostRAPseudo' and thus after register allocation:
+	 * 		loadi	rz, offset	(LOADI)
+	 * 		move	ry, rsp		(MOVE)
+	 * 		sub		ry, rz		(SUB) 	<-- manipulates the status flags set by compare!
+	 * 		store	rx, ry		(STORE)
+	 * 		jumpcc				(JUMPcc) -> gets expanded to the appropriate compare and jump instructions
+	 * 		jump				(JUMP)
+	 */
+	PROL16CC::ConditionCode const targetConditionCode = evalTargetConditionCode(lhs, rhs, conditionCode);
+	SDValue targetConditionCodeValue = dag.getConstant(targetConditionCode, debugLocation, MVT::i16, true);
+
+	SDValue operands[] = {destinationLabel, lhs, rhs, targetConditionCodeValue, chain};
+
+	return SDValue(dag.getMachineNode(PROL16::JUMPcc, debugLocation, operation.getValueType(), operands), 0);
 }
 
 SDValue PROL16TargetLowering::lowerConditionalSelect(SDValue operation, SelectionDAG &dag) const {
@@ -476,9 +520,9 @@ SDValue PROL16TargetLowering::lowerCCall(CallLoweringInfo &callLoweringInfo, Sma
 		}
 	}
 
-			// Build a sequence of copy-to-reg nodes chained together with token chain and
-			// flag operands which copy the outgoing args into registers.  The InFlag in
-			// necessary since all emitted instructions must be stuck together.
+	// Build a sequence of copy-to-reg nodes chained together with token chain and
+	// flag operands which copy the outgoing args into registers.  The InFlag in
+	// necessary since all emitted instructions must be stuck together.
 	SDValue inFlag;
 	for (auto const &argumentRegister : argumentRegisters) {
 		chain = dag.getCopyToReg(chain, debugLocation, argumentRegister.first, argumentRegister.second, inFlag);
@@ -731,7 +775,29 @@ MachineBasicBlock* PROL16TargetLowering::emitDirectBranch(MachineInstr &machineI
 
 	unsigned const jumpTargetRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
 
-	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOADI), jumpTargetRegister)
+	/**
+	 * Insert the corresponding 'LOADI' instruction before the first terminator instruction. This is important to not
+	 * interrupt the sequence of terminator instructions that is used to determine the insertion point for register
+	 * spilling instructions, which also uses 'getFirstTerminator'.
+	 *
+	 * For example:
+  	 * 		%19:gr16 = LOADI %bb.2
+  	 * 								<-- this is the correct insertion point for spilling instructions
+  	 * 		JUMPcc killed %19:gr16, %3:gr16, killed %11:gr16, 1
+  	 * 		%20:gr16 = LOADI %bb.3	<-- 'LOADI' instruction emitted by this method
+  	 * 								<-- but register spilling instructions would be inserted here
+  	 * 		JUMP killed %20:gr16	<-- 'JUMP' instruction emitted by this method
+  	 *
+  	 * This leads to false register values if the first branch (in this case JUMPcc) is taken.
+  	 * Therefore, the 'LOADI' instruction has to be inserted before the first terminator instruction,
+  	 * so that the result is:
+  	 * 		%19:gr16 = LOADI %bb.2
+  	 * 		%20:gr16 = LOADI %bb.3	<-- 'LOADI' instruction emitted by this method
+  	 * 								<-- register spilling instructions would be inserted here, which is the correct insertion point
+  	 * 		JUMPcc killed %19:gr16, %3:gr16, killed %11:gr16, 1
+  	 * 		JUMP killed %20:gr16	<-- 'JUMP' instruction emitted by this method
+	 */
+	BuildMI(*machineBasicBlock, machineBasicBlock->getFirstTerminator(), debugLocation, targetInstrInfo.get(PROL16::LOADI), jumpTargetRegister)
 		.add(machineInstruction.getOperand(0));
 
 	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::JUMP))
