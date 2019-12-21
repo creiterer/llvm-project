@@ -138,9 +138,12 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 
 		auto nextMachineInstruction = std::next(MI);
 		assert(nextMachineInstruction->getOpcode() == PROL16::LOADI && "unexpected non-loadi instruction for frame index elimination");
+		// fold the additional offset from 'loadi' into the frame offset
 		frameOffset += nextMachineInstruction->getOperand(1).getImm();
 
 		nextMachineInstruction->getOperand(1).setImm(calcAbsoluteFrameOffset(frameOffset));
+
+		assert(std::next(nextMachineInstruction)->getOpcode() == PROL16::SUB && "unexpected non-sub instruction for frame index elimination");
 	} else if ((machineInstruction.getOpcode() == PROL16::STORE) || (machineInstruction.getOpcode() == PROL16::LOAD)) {
 		/**
 		 * Frame Index Elimination for Conventional LOAD/STORE Instructions
