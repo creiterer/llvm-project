@@ -77,6 +77,9 @@ StringRef PROL16DAGToDAGISel::getPassName() const {
 }
 
 void PROL16DAGToDAGISel::Select(SDNode *N) {
+	LLVM_DEBUG(dbgs() << "PROL16DAGToDAGISel::Select()\n");
+	LLVM_DEBUG(N->dump());
+
 	// if node is already a machine node (e.g. inserted by lower global address)
 	// do not try to select it
 	if (N->isMachineOpcode()) {
@@ -127,6 +130,7 @@ bool PROL16DAGToDAGISel::SelectAddressWithDisplacement(SDValue const &address, S
 
 	default:
 		address.dump();
+		errs() << "opcode: " << address.getOpcode() << '\n';
 		llvm_unreachable("Unexpected opcode when selecting address (PROL16DAGToDAGISel::SelectAddressWithDisplacement())");
 	}
 
