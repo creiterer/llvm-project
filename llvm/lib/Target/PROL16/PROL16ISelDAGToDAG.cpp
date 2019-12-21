@@ -66,6 +66,10 @@ public:
 	/// Registration templates, but can be overloaded directly.
 	StringRef getPassName() const override;
 
+private:
+	int64_t calcGlobalAddressOffset(int64_t const offset) const noexcept;
+
+public:
 // include the pieces auto-generated from the target description
 #include "PROL16GenDAGISel.inc"
 };
@@ -85,6 +89,25 @@ void PROL16DAGToDAGISel::Select(SDNode *N) {
 	if (N->isMachineOpcode()) {
 		N->setNodeId(-1);
 		return;
+	}
+
+	SDLoc debugLocation(N);
+
+	// custom selection stuff
+	switch (N->getOpcode()) {
+	case ISD::GlobalAddress: {
+		GlobalAddressSDNode const * const globalAddressNode = cast<GlobalAddressSDNode>(N);
+		GlobalValue const * const globalValue = globalAddressNode->getGlobal();
+		int64_t const offset = globalAddressNode->getOffset();
+		assert(offset == 0);
+		auto pointerValueType = getTargetLowering()->getPointerTy(CurDAG->getDataLayout());
+
+		SDValue targetGlobalAddress = CurDAG->getTargetGlobalAddress(globalValue, debugLocation, pointerValueType);
+
+		CurDAG->SelectNodeTo(N, PROL16::LOADI, MVT::i16, targetGlobalAddress);
+
+		return;
+	}
 	}
 
 	// delegate to auto-generated instruction selection
@@ -128,6 +151,16 @@ bool PROL16DAGToDAGISel::SelectAddressWithDisplacement(SDValue const &address, S
 												 SDLoc(address), MVT::i16);
 		return true;
 
+	case ISD::GlobalAddress:
+		base = CurDAG->getTargetGlobalAddress(cast<GlobalAddressSDNode>(address)->getGlobal(),
+											  SDLoc(address),
+											  getTargetLowering()->getPointerTy(CurDAG->getDataLayout()));
+
+		displacement = CurDAG->getTargetConstant(calcGlobalAddressOffset(cast<GlobalAddressSDNode>(address)->getOffset()),
+												 SDLoc(address), MVT::i16);
+
+		return true;
+
 	default:
 		address.dump();
 		errs() << "opcode: " << address.getOpcode() << '\n';
@@ -135,6 +168,11 @@ bool PROL16DAGToDAGISel::SelectAddressWithDisplacement(SDValue const &address, S
 	}
 
 	return false;
+}
+
+int64_t PROL16DAGToDAGISel::calcGlobalAddressOffset(int64_t const offset) const noexcept {
+	// https://stackoverflow.com/questions/7594508/modulo-operator-with-negative-values
+	return offset / 2 + offset % 2;
 }
 
 }
