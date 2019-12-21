@@ -234,6 +234,8 @@ protected:
   /// result of a alignment directive.  Defaults to 0
   unsigned TextAlignFillValue = 0;
 
+  const char *AlignmentDirective;
+
   //===--- Global Variable Emission Directives --------------------------===//
 
   /// This is the directive used to declare a global entity. Defaults to
@@ -525,6 +527,7 @@ public:
   const char *getAscizDirective() const { return AscizDirective; }
   bool getAlignmentIsInBytes() const { return AlignmentIsInBytes; }
   unsigned getTextAlignFillValue() const { return TextAlignFillValue; }
+  const char *getAlignmentDirective() const { return AlignmentDirective; }
   const char *getGlobalDirective() const { return GlobalDirective; }
 
   bool doesSetDirectiveSuppressReloc() const {

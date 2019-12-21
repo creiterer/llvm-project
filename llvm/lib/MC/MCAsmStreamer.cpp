@@ -1082,6 +1082,8 @@ void MCAsmStreamer::emitFill(const MCExpr &NumValues, int64_t Size,
 void MCAsmStreamer::EmitValueToAlignment(unsigned ByteAlignment, int64_t Value,
                                          unsigned ValueSize,
                                          unsigned MaxBytesToEmit) {
+  if (MAI->getAlignmentDirective() == nullptr) { return; }
+
   // Some assemblers don't support non-power of two alignments, so we always
   // emit alignments as a power of two if possible.
   if (isPowerOf2_32(ByteAlignment)) {

@@ -44,4 +44,6 @@ PROL16MCAsmInfo::PROL16MCAsmInfo(Triple const &targetTriple) {
 	Data16bitsDirective = "db\t";
 	Data32bitsDirective = nullptr;
 	Data64bitsDirective = nullptr;
+
+	AlignmentDirective = nullptr;
 }
