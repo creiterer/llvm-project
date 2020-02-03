@@ -26,6 +26,12 @@ PROL16MCAsmInfo::PROL16MCAsmInfo(Triple const &targetTriple) {
 	/// for ELF targets.  Defaults to true.
 	HasSingleParameterDotFile = false;
 
+	/// This should be set to the directive used to get some number of zero bytes
+	/// emitted to the current section.  Common cases are "\t.zero\t" and
+	/// "\t.space\t".  If this is set to null, the Data*bitsDirective's will be
+	/// used to emit zero bytes.  Defaults to "\t.zero\t"
+	ZeroDirective = nullptr;
+
 	/// This directive allows emission of an ascii string with the standard C
 	/// escape characters embedded into it.  If a target doesn't support this, it
 	/// can be set to null. Defaults to "\t.ascii\t"
