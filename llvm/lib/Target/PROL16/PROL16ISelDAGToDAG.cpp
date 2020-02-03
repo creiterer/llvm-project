@@ -11,13 +11,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "PROL16.h"
+#include "PROL16ISelLowering.h"
+#include "PROL16TargetMachine.h"
+#include "PROL16Utils.h"
+
 #include "llvm/Pass.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
 #include "llvm/Support/Casting.h"
-
-#include "PROL16.h"
-#include "PROL16TargetMachine.h"
-#include "PROL16ISelLowering.h"
 
 using namespace llvm;
 
