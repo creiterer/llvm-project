@@ -75,6 +75,8 @@ func parseArch(arch string) string {
 		return "mips64"
 	case "mipsel64":
 		return "mipsel64"
+	case "prol16":
+		return "prol16"		
 	case "r600", "hexagon", "sparc", "sparcv9", "tce",
 		"xcore", "nvptx", "nvptx64", "le32", "amdil":
 		return arch

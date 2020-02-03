@@ -54,6 +54,7 @@ func parseTriple(triple string) (goos string, goarch string, err error) {
 		{"amd64|x86_64", "amd64"},
 		{"i[3-9]86", "386"},
 		{"xscale|((arm|thumb)(v.*)?)", "arm"},
+		{"prol16", "prol16"},
 	}
 	goosREs := []REs{
 		{"linux.*", "linux"},

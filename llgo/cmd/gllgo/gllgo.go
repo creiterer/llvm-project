@@ -219,7 +219,8 @@ func parseArguments(args []string) (opts driverOptions, err error) {
 	hasOtherNonFlagInputs := false
 	noPrefix := false
 	actionKind := actionLink
-	opts.triple = llvm.DefaultTargetTriple()
+//	opts.triple = llvm.DefaultTargetTriple()
+	opts.triple = "prol16-unknown-linux_gnu"
 
 	for len(args) > 0 {
 		consumedArgs := 1
