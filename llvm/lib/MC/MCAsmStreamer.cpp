@@ -1070,6 +1070,16 @@ void MCAsmStreamer::emitFill(const MCExpr &NumBytes, uint64_t FillValue,
     return;
   }
 
+  if (char const * const data16bitsDirective = MAI->getData16bitsDirective()) {
+	  int64_t const num16BitBytes = IntNumBytes / 2 + IntNumBytes % 2;
+	  for (int64_t i = 0; i < num16BitBytes; ++i) {
+		  OS << data16bitsDirective << FillValue;
+		  EmitEOL();
+	  }
+
+	  return;
+  }
+
   MCStreamer::emitFill(NumBytes, FillValue);
 }
 
