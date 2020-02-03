@@ -634,6 +634,8 @@ static inline void
 AdjustStackOffset(MachineFrameInfo &MFI, int FrameIdx,
                   bool StackGrowsDown, int64_t &Offset,
                   unsigned &MaxAlign, unsigned Skew) {
+	LLVM_DEBUG(dbgs() << "AdjustStackOffset(): frame index = " << FrameIdx << ", initial offset = " << Offset
+			   	   	      << ", max align = " << MaxAlign << ", skew = " << Skew << '\n');
   // If the stack grows down, add the object size to find the lowest address.
   if (StackGrowsDown)
     Offset += MFI.getObjectSize(FrameIdx);
@@ -646,6 +648,7 @@ AdjustStackOffset(MachineFrameInfo &MFI, int FrameIdx,
 
   // Adjust to alignment boundary.
   Offset = alignTo(Offset, Align, Skew);
+  LLVM_DEBUG(dbgs() << "offset after aligning = " << Offset << '\n');
 
   if (StackGrowsDown) {
     LLVM_DEBUG(dbgs() << "alloc FI(" << FrameIdx << ") at SP[" << -Offset
@@ -781,6 +784,8 @@ AssignProtectedObjSet(const StackObjSet &UnassignedObjs,
 /// calculateFrameObjectOffsets - Calculate actual frame offsets for all of the
 /// abstract stack objects.
 void PEI::calculateFrameObjectOffsets(MachineFunction &MF) {
+	LLVM_DEBUG(dbgs() << "PEI::calculateFrameObjectOffsets()\n");
+
   const TargetFrameLowering &TFI = *MF.getSubtarget().getFrameLowering();
 
   bool StackGrowsDown =
@@ -793,6 +798,7 @@ void PEI::calculateFrameObjectOffsets(MachineFunction &MF) {
   // The Offset is the distance from the stack top in the direction
   // of stack growth -- so it's always nonnegative.
   int LocalAreaOffset = TFI.getOffsetOfLocalArea();
+  LLVM_DEBUG(dbgs() << "local area offset (= initial object offset) = " << LocalAreaOffset << '\n');
   if (StackGrowsDown)
     LocalAreaOffset = -LocalAreaOffset;
   assert(LocalAreaOffset >= 0
@@ -844,10 +850,12 @@ void PEI::calculateFrameObjectOffsets(MachineFunction &MF) {
       // If the stack grows down, we need to add the size to find the lowest
       // address of the object.
       Offset += MFI.getObjectSize(i);
+      LLVM_DEBUG(dbgs() << "offset after adding object size = " << Offset << '\n');
 
       unsigned Align = MFI.getObjectAlignment(i);
       // Adjust to alignment boundary
       Offset = alignTo(Offset, Align, Skew);
+      LLVM_DEBUG(dbgs() << "offset after aligning = " << Offset << '\n');
 
       LLVM_DEBUG(dbgs() << "alloc FI(" << i << ") at SP[" << -Offset << "]\n");
       MFI.setObjectOffset(i, -Offset);        // Set the computed offset
