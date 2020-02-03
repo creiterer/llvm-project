@@ -13,19 +13,19 @@
 
 #include "PROL16RegisterInfo.h"
 
-#include <cstdlib>
+#include "PROL16FrameLowering.h"				// also needed in  PROL16GenRegisterInfo.inc
+#include "PROL16Utils.h"
 
-#include "llvm/CodeGen/MachineFunction.h"		// also needed in PROL16GenRegisterInfo.inc
-#include "llvm/CodeGen/TargetSubtargetInfo.h"	// also needed in PROL16GenRegisterInfo.inc
-#include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
-#include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
+#include "llvm/CodeGen/MachineFunction.h"		// also needed in PROL16GenRegisterInfo.inc
+#include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/RegisterScavenging.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"	// also needed in PROL16GenRegisterInfo.inc
 
-#include "PROL16FrameLowering.h"				// also needed in  PROL16GenRegisterInfo.inc
+#include <cstdlib>
 
 using namespace llvm;
 
@@ -229,7 +229,6 @@ unsigned PROL16RegisterInfo::calcAbsoluteFrameOffset(int const frameOffset) cons
 	 * 		alloc FI(3) at SP[-8]
 	 * 		alloc FI(4) at SP[-9]
 	 */
-	unsigned const absoluteFrameOffset = std::abs(frameOffset);
 
-	return absoluteFrameOffset / 2 + absoluteFrameOffset % 2;
+	return std::abs(prol16::util::calcOffset(frameOffset));
 }
