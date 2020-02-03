@@ -89,6 +89,9 @@ func (fr *frame) printValues(println_ bool, values ...*govalue) {
 			default:
 				panic(fmt.Sprintf("Unhandled Basic Kind: %s (%T)", typ, typ))
 			}
+
+		case *types.Pointer:
+			fr.runtime.prol16PrintPointer.call(fr, llvm_value)
 /*	@PROL16
 		case *types.Interface:
 			if typ.Empty() {

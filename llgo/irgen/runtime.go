@@ -130,6 +130,7 @@ type runtimeInterface struct {
 	prol16PrintUint32,
 	prol16PrintRune,
 	prol16PrintString,
+	prol16PrintPointer,
 	prol16PrintNl,
 	prol16PrintSpace runtimeFnInfo
 }
@@ -532,6 +533,11 @@ func newRuntimeInterface(module llvm.Module, tm *llvmTypeMap) (*runtimeInterface
 			name: "__prol16_print_string",
 			rfi:  &ri.prol16PrintString,
 			args: []types.Type{String},
+		},
+		{
+			name: "__prol16_print_pointer",
+			rfi:  &ri.prol16PrintPointer,
+			args: []types.Type{UnsafePointer},
 		},
 		{
 			name: "__prol16_print_nl",
