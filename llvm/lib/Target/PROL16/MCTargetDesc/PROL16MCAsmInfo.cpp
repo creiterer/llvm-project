@@ -52,4 +52,11 @@ PROL16MCAsmInfo::PROL16MCAsmInfo(Triple const &targetTriple) {
 	Data64bitsDirective = nullptr;
 
 	AlignmentDirective = nullptr;
+
+	/// This is the directive used to declare a global entity. Defaults to
+	/// ".globl".
+	GlobalDirective = nullptr;
+
+	/// Used to declare a global as being a weak symbol. Defaults to ".weak".
+	WeakDirective = nullptr;
 }
