@@ -628,6 +628,7 @@ bool MCAsmStreamer::EmitSymbolAttribute(MCSymbol *Symbol,
     EmitEOL();
     return true;
   case MCSA_Global: // .globl/.global
+	  if (MAI->getGlobalDirective() == nullptr) { return false; }
     OS << MAI->getGlobalDirective();
     break;
   case MCSA_Hidden:         OS << "\t.hidden\t";          break;
