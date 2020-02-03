@@ -20,6 +20,7 @@
 #include "Hexagon.h"
 #include "MSP430.h"
 #include "InputInfo.h"
+#include "PROL16.h"
 #include "PS4CPU.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/LangOptions.h"
@@ -366,6 +367,10 @@ static void getTargetFeatures(const ToolChain &TC, const llvm::Triple &Triple,
     break;
   case llvm::Triple::msp430:
     msp430::getMSP430TargetFeatures(D, Args, Features);
+    break;
+  case llvm::Triple::prol16:
+	  prol16::getPROL16TargetFeatures(D, Args, Features);
+	  break;
   }
 
   // Find the last of each feature.

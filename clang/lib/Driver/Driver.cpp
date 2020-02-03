@@ -39,6 +39,7 @@
 #include "ToolChains/OpenBSD.h"
 #include "ToolChains/PS4CPU.h"
 #include "ToolChains/PPCLinux.h"
+#include "ToolChains/PROL16.h"
 #include "ToolChains/RISCVToolchain.h"
 #include "ToolChains/Solaris.h"
 #include "ToolChains/TCE.h"
@@ -4720,6 +4721,9 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
         TC =
             llvm::make_unique<toolchains::MSP430ToolChain>(*this, Target, Args);
         break;
+      case llvm::Triple::prol16:
+    	  TC = llvm::make_unique<toolchains::PROL16ToolChain>(*this, Target, Args);
+    	  break;
       case llvm::Triple::riscv32:
       case llvm::Triple::riscv64:
         TC = llvm::make_unique<toolchains::RISCVToolChain>(*this, Target, Args);

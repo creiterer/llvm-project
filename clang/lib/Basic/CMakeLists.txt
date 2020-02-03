@@ -76,6 +76,7 @@ add_clang_library(clangBasic
   Targets/OSTargets.cpp
   Targets/PNaCl.cpp
   Targets/PPC.cpp
+  Targets/PROL16.cpp
   Targets/RISCV.cpp
   Targets/SPIR.cpp
   Targets/Sparc.cpp

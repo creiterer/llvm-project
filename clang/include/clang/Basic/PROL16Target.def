@@ -1,0 +1,24 @@
+//===--- PROL16Target.def - PROL16 Feature/Processor Database----*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+//
+// This file defines the PROL16 devices and their features.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef PROL16_MCU_FEAT
+#define PROL16_MCU_FEAT(NAME, HWMULT) PROL16_MCU(NAME)
+#endif
+
+#ifndef PROL16_MCU
+#define PROL16_MCU(NAME)
+#endif
+
+PROL16_MCU("PROL16")
+
+#undef PROL16_MCU
+#undef PROL16_MCU_FEAT
