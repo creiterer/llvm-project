@@ -84,6 +84,22 @@ def addr : ComplexPattern<iPTR, 1, "SelectAddress">;
 def addrdisp : ComplexPattern<iPTR, 2, "SelectAddressWithDisplacement">;
 
 //===----------------------------------------------------------------------===//
+// PROL16 specific Pattern Fragments
+//===----------------------------------------------------------------------===//
+
+def anyextload : PatFrag<(ops node:$ptr), (unindexedload node:$ptr), [{
+  return cast<LoadSDNode>(N)->getExtensionType() != ISD::NON_EXTLOAD;
+}]>;
+
+def anyextloadi8 : PatFrag<(ops node:$ptr), (anyextload node:$ptr), [{
+  return cast<LoadSDNode>(N)->getMemoryVT() == MVT::i8;
+}]>;
+
+def anyextloadi1 : PatFrag<(ops node:$ptr), (anyextload node:$ptr), [{
+  return cast<LoadSDNode>(N)->getMemoryVT() == MVT::i1;
+}]>;
+
+//===----------------------------------------------------------------------===//
 // Pseudo Instructions
 //===----------------------------------------------------------------------===//
 
@@ -351,7 +367,11 @@ def : Pat<(PROL16Call (i16 tglobaladdr:$dst)),
           (CALLi tglobaladdr:$dst)>;
 def : Pat<(PROL16Call (i16 texternalsym:$dst)),
           (CALLi texternalsym:$dst)>;
-          
+
+// truncate operations
+//def : Pat<(i8 (trunc GR16:$src)),
+//          (SEXT (i8 (trunc GR16:$src)))>;
+
 // truncating store operations
 def : Pat<(truncstorei8 GR16:$src, GR16:$dst),
 		  (STORE GR16:$src, GR16:$dst)>;
@@ -359,14 +379,8 @@ def : Pat<(truncstorei8 GR16:$src, addrdisp:$dst),
 		  (STORErm addrdisp:$dst, GR16:$src)>;
 		  
 // extending load operations
-def anyextload : PatFrag<(ops node:$ptr), (unindexedload node:$ptr), [{
-  return cast<LoadSDNode>(N)->getExtensionType() != ISD::NON_EXTLOAD;
-}]>;
-def anyextloadi8 : PatFrag<(ops node:$ptr), (anyextload node:$ptr), [{
-  return cast<LoadSDNode>(N)->getMemoryVT() == MVT::i8;
-}]>;
+def : Pat<(anyextloadi8 GR16:$src), (LOAD GR16:$src)>;
+def : Pat<(anyextloadi8 addrdisp:$src), (LOADrm addrdisp:$src)>;
+def : Pat<(anyextloadi1 GR16:$src), (LOAD GR16:$src)>;
+def : Pat<(anyextloadi1 addrdisp:$src), (LOADrm addrdisp:$src)>;
 
-def : Pat<(anyextloadi8 GR16:$src),
-		  (LOAD GR16:$src)>;
-def : Pat<(anyextloadi8 addrdisp:$src),
-		  (LOADrm addrdisp:$src)>;

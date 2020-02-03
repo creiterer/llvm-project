@@ -197,9 +197,7 @@ func (u *unit) translatePackage(pkg *ssa.Package) {
 
 	// Emit initializers for type descriptors, which may trigger
 	// the resolution of additional functions.
-/*	@PROL16
 	u.types.emitTypeDescInitializers()
-*/
 
 	// Define remaining functions that were resolved during
 	// runtime type mapping, but not defined.
@@ -306,13 +304,11 @@ func (u *unit) defineFunction(f *ssa.Function) {
 	isMethod := f.Signature.Recv() != nil
 
 	// Methods cannot be referred to via a descriptor.
-/*	@PROL16
 	if !isMethod {
 		llfd := u.resolveFunctionDescriptorGlobal(f)
 		llfd.SetInitializer(llvm.ConstBitCast(llfn, llvm.PointerType(llvm.Int8Type(), 0)))
 		llfd.SetLinkage(linkage)
 	}
-*/
 
 	// We only need to emit a descriptor for functions without bodies.
 	if len(f.Blocks) == 0 {
@@ -417,10 +413,8 @@ func (u *unit) defineFunction(f *ssa.Function) {
 	// If this is the "init" function, emit the init guard check and
 	// enable init-specific optimizations.
 	if !isMethod && f.Name() == "init" {
-/*	@PROL16
 		registerGcBlock = fr.emitInitPrologue()
 		fr.isInit = true
-*/
 	}
 
 	fr.builder.CreateBr(fr.blocks[0])
