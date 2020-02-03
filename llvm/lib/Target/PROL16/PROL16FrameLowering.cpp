@@ -14,6 +14,7 @@
 #include "PROL16FrameLowering.h"
 
 #include "PROL16TargetMachine.h"
+#include "PROL16Utils.h"
 
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -36,7 +37,7 @@ using namespace llvm;
 #include "PROL16GenRegisterInfo.inc"
 
 // LAO = -1 because frame pointer is pushed to stack
-PROL16FrameLowering::PROL16FrameLowering() : TargetFrameLowering(TargetFrameLowering::StackGrowsDown, 1, -1) {}
+PROL16FrameLowering::PROL16FrameLowering() : TargetFrameLowering(TargetFrameLowering::StackGrowsDown, 1, 0) {}
 
 void PROL16FrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &MBB) const {
 	LLVM_DEBUG(dbgs() << "PROL16FrameLowering::emitPrologue()\n");
@@ -49,6 +50,7 @@ void PROL16FrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &M
 
 	// get the number of bytes to allocate from the frame info
 	uint64_t const stackSize = machineFrameInfo.getStackSize();
+	LLVM_DEBUG(dbgs() << "stack size = " << stackSize << '\n');
 	if (stackSize == 0) { return; }
 
 	uint64_t stackPointerAdjustment = 0;
@@ -72,6 +74,8 @@ void PROL16FrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &M
 		stackPointerAdjustment = stackSize;
 	}
 
+	LLVM_DEBUG(dbgs() << "calculated stack pointer adjustment = " << stackPointerAdjustment << '\n');
+
 	DebugLoc debugLocation = MBBItor != MBB.end() ? MBBItor->getDebugLoc() : DebugLoc();
 
 	// adjust stack pointer for the current call frame
@@ -79,7 +83,7 @@ void PROL16FrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &M
 		unsigned const offsetRegister = machineRegisterInfo.createVirtualRegister(&PROL16::GR16RegClass);
 
 		BuildMI(MBB, MBBItor, debugLocation, targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-			.addImm(stackPointerAdjustment);
+			.addImm(prol16::util::calcOffset(stackPointerAdjustment));
 
 		BuildMI(MBB, MBBItor, debugLocation, targetInstrInfo.get(PROL16::SUB), PROL16::RSP)
 			.addReg(PROL16::RSP).addReg(offsetRegister, RegState::Kill);
@@ -122,7 +126,7 @@ void PROL16FrameLowering::emitEpilogue(MachineFunction &MF, MachineBasicBlock &M
 			unsigned const offsetRegister = machineRegisterInfo.createVirtualRegister(&PROL16::GR16RegClass);
 
 			BuildMI(MBB, MBBItor, debugLocation, targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-				.addImm(stackPointerAdjustment);
+				.addImm(prol16::util::calcOffset(stackPointerAdjustment));
 
 			BuildMI(MBB, MBBItor, debugLocation, targetInstrInfo.get(PROL16::ADD), PROL16::RSP)
 				.addReg(PROL16::RSP).addReg(offsetRegister, RegState::Kill);
