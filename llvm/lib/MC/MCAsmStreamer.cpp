@@ -648,7 +648,10 @@ bool MCAsmStreamer::EmitSymbolAttribute(MCSymbol *Symbol,
     break;
   case MCSA_Protected:      OS << "\t.protected\t";       break;
   case MCSA_Reference:      OS << "\t.reference\t";       break;
-  case MCSA_Weak:           OS << MAI->getWeakDirective(); break;
+  case MCSA_Weak:
+	  if (MAI->getWeakDirective() == nullptr) { return false; }
+	  OS << MAI->getWeakDirective();
+	  break;
   case MCSA_WeakDefinition:
     OS << "\t.weak_definition\t";
     break;
