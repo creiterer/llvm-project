@@ -24,7 +24,7 @@ add_llvm_target(PROL16CodeGen
 	PROL16Subtarget.cpp
 	PROL16TargetMachine.cpp
 	PROL16MachineInstrLowering.cpp
-#	PROL16TargetObjectFile.cpp
+	PROL16TargetLoweringObjectFile.cpp
 )
 
 #add_subdirectory(AsmParser)

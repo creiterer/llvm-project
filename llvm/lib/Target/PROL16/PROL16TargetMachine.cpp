@@ -12,10 +12,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "PROL16TargetMachine.h"
+#include "PROL16TargetLoweringObjectFile.h"
 
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
-#include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 
 #include "PROL16.h"
 #include "MCTargetDesc/PROL16MCTargetDesc.h"
@@ -55,7 +55,7 @@ PROL16TargetMachine::PROL16TargetMachine(Target const &target,
 		getEffectiveRelocationModel(relocationModel), getEffectiveCodeModel(codeModel, CodeModel::Small), optimizationLevel),
   subtarget(targetTriple, cpu, featureString, *this),
   // FIXME(PROL16): ELF probably doesn't fit for prol16
-  targetLoweringObjectFile(make_unique<TargetLoweringObjectFileELF>()) {
+  targetLoweringObjectFile(make_unique<PROL16TargetLoweringObjectFile>()) {
 	initAsmInfo();
 }
 
