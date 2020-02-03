@@ -573,7 +573,7 @@ func newRuntimeInterface(module llvm.Module, tm *llvmTypeMap) (*runtimeInterface
 		[]llvm.Type{
 			llvm.PointerType(llvm.Int8Type(), 0),
 			llvm.PointerType(llvm.Int8Type(), 0),
-			llvm.Int64Type(),
+			llvm.Int16Type(),
 			llvm.Int1Type(),
 		},
 		false,
