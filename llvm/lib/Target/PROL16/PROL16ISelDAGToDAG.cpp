@@ -109,6 +109,13 @@ void PROL16DAGToDAGISel::Select(SDNode *N) {
 
 		return;
 	}
+
+	case ISD::FrameIndex:
+		CurDAG->SelectNodeTo(N, PROL16::ADDframe, MVT::i16,
+							 CurDAG->getTargetFrameIndex(cast<FrameIndexSDNode>(N)->getIndex(), MVT::i16),
+							 CurDAG->getTargetConstant(0, debugLocation, MVT::i16));
+		return;
+
 	}
 
 	// delegate to auto-generated instruction selection

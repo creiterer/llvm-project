@@ -112,6 +112,12 @@ let Defs = [RSP], Uses = [RSP] in {
 	                            		   		 "#ADJCALLSTACKUP $amt1",
 	                            		   		 [(PROL16CallSeqEnd timm:$amt1, timm:$amt2)]>;
 }
+
+let isCodeGenOnly = 1 in {
+	def ADDframe : PROL16PseudoInstruction<(outs GR16:$dst), (ins i16imm:$base, i16imm:$offset),
+										   "# ADDframe PSEUDO!",
+										   []>;
+}
 	
 let usesCustomInserter = 1 in {
 	let mayStore = 1 in {

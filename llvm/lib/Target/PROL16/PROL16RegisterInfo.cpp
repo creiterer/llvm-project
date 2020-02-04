@@ -189,6 +189,47 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 			// change frame index operand to use the register holding the computed stack address
 			machineInstruction.getOperand(FIOperandNum).ChangeToRegister(offsetRegister, false, false, true);
 		}
+	} else if (machineInstruction.getOpcode() == PROL16::ADDframe) {
+		/**
+		 * For example:
+		 * 		$r4 = ADDframe %stack.2.p, 0
+		 *
+		 * becomes
+		 * 		move	r4, rsp
+		 * 		loadi	r5, 12
+		 * 		sub	r4, r5
+		 *
+		 * after frame index elimination.
+		 */
+		unsigned const targetRegister = machineInstruction.getOperand(0).getReg();
+
+		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::MOVE), targetRegister)
+			.addReg(frameRegister);
+
+		MachineOperand const &offsetOperand = machineInstruction.getOperand(FIOperandNum + 1);
+
+		if (offsetOperand.isImm()) {
+			// fold any additional offset into the frame offset
+			frameOffset += offsetOperand.getImm();
+			if (frameOffset == 0) {
+				return;
+			}
+		} else if (offsetOperand.isReg()) {
+			BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::ADD), targetRegister)
+				.addReg(targetRegister).add(offsetOperand);
+		} else {
+			llvm_unreachable("PROL16RegisterInfo::eliminateFrameIndex: encountered unexpected offset operand for 'ADDframe' elimination");
+		}
+
+		unsigned const offsetRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
+
+		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
+			.addImm(calcAbsoluteFrameOffset(frameOffset));
+
+		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD), targetRegister)
+			.addReg(targetRegister).addReg(offsetRegister, RegState::Kill);
+
+		machineInstruction.eraseFromParent();
 	} else {
 		llvm_unreachable("PROL16RegisterInfo::eliminateFrameIndex: encountered unexpected instruction for frame index elimination");
 	}
