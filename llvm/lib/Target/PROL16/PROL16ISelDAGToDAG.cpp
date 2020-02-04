@@ -144,6 +144,11 @@ bool PROL16DAGToDAGISel::SelectAddressWithDisplacement(SDValue const &address, S
 	LLVM_DEBUG(dbgs() << "PROL16DAGToDAGISel::SelectAddressWithDisplacement()\n");
 	LLVM_DEBUG(address.dump());
 
+	for (unsigned i = 0; i < address.getNumOperands(); ++i) {
+		LLVM_DEBUG(dbgs() << "address operand " << i << ": ");
+		LLVM_DEBUG(address.getOperand(i).dump());
+	}
+
 	switch (address.getOpcode()) {
 	case ISD::FrameIndex:
 		base = CurDAG->getTargetFrameIndex(cast<FrameIndexSDNode>(address)->getIndex(),
