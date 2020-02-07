@@ -137,13 +137,27 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 		machineInstruction.getOperand(FIOperandNum).ChangeToRegister(frameRegister, false);
 
 		auto nextMachineInstruction = std::next(MI);
-		assert(nextMachineInstruction->getOpcode() == PROL16::LOADI && "unexpected non-loadi instruction for frame index elimination");
-		// fold the additional offset from 'loadi' into the frame offset
-		frameOffset += nextMachineInstruction->getOperand(1).getImm();
 
-		nextMachineInstruction->getOperand(1).setImm(calcAbsoluteFrameOffset(frameOffset));
+		if (nextMachineInstruction->getOpcode() == PROL16::LOADI) {
+			// fold the additional offset from 'loadi' into the frame offset
+			frameOffset += nextMachineInstruction->getOperand(1).getImm();
+			nextMachineInstruction->getOperand(1).setImm(calcAbsoluteFrameOffset(frameOffset));
 
-		assert(std::next(nextMachineInstruction)->getOpcode() == PROL16::SUB && "unexpected non-sub instruction for frame index elimination");
+			std::advance(nextMachineInstruction, 1);
+			nextMachineInstruction->setDesc(targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD));
+		} else {
+			unsigned const offsetRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
+
+			// insert instruction to load the offset into a register
+			BuildMI(machineBasicBlock, nextMachineInstruction, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
+				.addImm(calcAbsoluteFrameOffset(frameOffset));
+
+			unsigned const baseRegister = machineInstruction.getOperand(0).getReg();
+
+			// insert instruction to subtract the offset from the base register copy
+			BuildMI(machineBasicBlock, nextMachineInstruction, machineInstruction.getDebugLoc(), targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD), baseRegister)
+				.addReg(baseRegister).addReg(offsetRegister, RegState::Kill);
+		}
 	} else if ((machineInstruction.getOpcode() == PROL16::STORE) || (machineInstruction.getOpcode() == PROL16::LOAD)) {
 		/**
 		 * Frame Index Elimination for Conventional LOAD/STORE Instructions
