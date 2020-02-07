@@ -690,6 +690,9 @@ MachineBasicBlock* PROL16TargetLowering::emitStoreWithDisplacement(MachineInstr 
 
 MachineBasicBlock* PROL16TargetLowering::emitLoadWithDisplacement(MachineInstr &machineInstruction,
 																  MachineBasicBlock *machineBasicBlock) const {
+	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::emitLoadWithDisplacement()\n");
+	LLVM_DEBUG(machineInstruction.dump());
+
 	DebugLoc debugLocation = machineInstruction.getDebugLoc();
 	MachineRegisterInfo &registerInfo = machineBasicBlock->getParent()->getRegInfo();
 	TargetInstrInfo const &targetInstrInfo = *(machineBasicBlock->getParent()->getSubtarget().getInstrInfo());
@@ -703,25 +706,29 @@ MachineBasicBlock* PROL16TargetLowering::emitLoadWithDisplacement(MachineInstr &
 	// machine instruction operand 2 = displacement
 	MachineOperand const &displacement = machineInstruction.getOperand(2);
 
-	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::emitLoadWithDisplacement()\n");
-	LLVM_DEBUG(machineInstruction.dump());
+	unsigned baseRegister = 0;
+	unsigned baseRegisterFlags = 0;
 
-	unsigned const baseRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+	if (base.isReg()) {
+		baseRegister = base.getReg();
+		baseRegisterFlags = getRegState(base);
+	} else {
+		baseRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+		baseRegisterFlags = RegState::Kill;
 
-	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(base.isFI() ? PROL16::MOVE : PROL16::LOADI), baseRegister)
-		.add(base);
+		BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(base.isFI() ? PROL16::MOVE : PROL16::LOADI), baseRegister)
+			.add(base);
+	}
 
 	if (displacement.isImm()) {
 		int64_t const offset = displacement.getImm();
+		unsigned absoluteOffset = std::abs(offset);
+
 		if ((offset != 0) || base.isFI()) {
+			// FIXME(creiterer): this should not be necessary anymore
 			// NOTE: do not "optimize" away the following instructions if base is a frame index
 			// because these instructions are needed for frame index elimination, which anyway eliminates this offset
 			// by folding it into the frame offset.
-
-			unsigned const displacementRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
-
-			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOADI), displacementRegister)
-				.addImm(offset);
 
 			unsigned opcode = 0;
 			if (base.isFI()) {
@@ -729,18 +736,43 @@ MachineBasicBlock* PROL16TargetLowering::emitLoadWithDisplacement(MachineInstr &
 				// because frame index elimination relies on that.
 				opcode = PROL16::SUB;
 			} else {
-				opcode = offset > 0 ? PROL16::ADD : PROL16::SUB;
+				opcode = offset < 0 ? PROL16::SUB : PROL16::ADD;
+
+				// do not halve the offset in case that base is a frame index because then
+				// the halving is done with frame index elimination
+				absoluteOffset = prol16::util::calcOffset(absoluteOffset);
 			}
+
+			/**
+			 * If the base register is not killed (i.e. it is still used after the load),
+			 * we must not modify it directly!
+			 */
+			if (!prol16::util::isKill(baseRegisterFlags)) {
+				unsigned const tmpBaseRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+				BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::MOVE), tmpBaseRegister)
+					.addReg(baseRegister);
+
+				baseRegister = tmpBaseRegister;
+				baseRegisterFlags = RegState::Kill;
+			}
+
+			unsigned const displacementRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+
+			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOADI), displacementRegister)
+				.addImm(absoluteOffset);
 
 			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(opcode), baseRegister)
 				.addReg(baseRegister).addReg(displacementRegister, RegState::Kill);
 		}
+	} else if (displacement.isReg()) {
+		BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::ADD), baseRegister)
+			.addReg(baseRegister).add(displacement);
 	} else {
-		llvm_unreachable("Encountered unexpected machine instruction operand 1 while lowering STOREI");
+		llvm_unreachable("Encountered unexpected machine instruction operand 1 while lowering LOADrm");
 	}
 
 	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOAD), destination.getReg())
-		.addReg(baseRegister, RegState::Kill);
+		.addReg(baseRegister, baseRegisterFlags);
 
 	// remove the pseudo instruction
 	machineInstruction.eraseFromParent();
