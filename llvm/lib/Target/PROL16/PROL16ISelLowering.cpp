@@ -815,7 +815,9 @@ MachineBasicBlock* PROL16TargetLowering::emitReturn(MachineInstr &machineInstruc
 	unsigned const returnAddressRegister = machineInstruction.getOperand(0).getReg();
 	assert(returnAddressRegister == registerInfo.getTargetRegisterInfo()->getRARegister());
 
-	if ((machineFunction->getName() == "main") || (machineFunction->getName() == "main.main")) {
+	if ((machineFunction->getName() == "main") ||
+		(machineFunction->getName() == "main.main") ||
+		(machineFunction->getName() == "__go_init_main")) {
 		BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::SLEEP));
 	} else {
 		// it is important to use JUMPret here due to its "isReturn" property, which is needed by the PEI pass
