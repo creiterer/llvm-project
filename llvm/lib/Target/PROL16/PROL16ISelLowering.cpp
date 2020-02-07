@@ -263,6 +263,9 @@ MachineBasicBlock* PROL16TargetLowering::EmitInstrWithCustomInserter(MachineInst
 }
 
 SDValue PROL16TargetLowering::lowerConditionalBranch(SDValue operation, SelectionDAG &dag) const {
+	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::lowerConditionalBranch():\n");
+	LLVM_DEBUG(operation.dump());
+
 	SDValue chain = operation.getOperand(0);
 	ISD::CondCode conditionCode = cast<CondCodeSDNode>(operation.getOperand(1))->get();
 	SDValue lhs = operation.getOperand(2);
@@ -270,31 +273,6 @@ SDValue PROL16TargetLowering::lowerConditionalBranch(SDValue operation, Selectio
 	SDValue destinationLabel = operation.getOperand(4);
 	SDLoc debugLocation(operation);
 
-	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::lowerConditionalBranch():\n");
-	LLVM_DEBUG(operation.dump());
-
-/*
-	PROL16CC::ConditionCode targetConditionCode = PROL16CC::INVALID;
-
-	SDValue flag = emitCompare(lhs, rhs, targetConditionCode, conditionCode, debugLocation, dag);
-
-	switch (targetConditionCode) {
-	case PROL16CC::EQ:
-		return dag.getNode(PROL16ISD::JUMPZ, debugLocation, operation.getValueType(),
-						   chain, destinationLabel, flag);
-	case PROL16CC::NE:
-		return dag.getNode(PROL16ISD::JUMPNZ, debugLocation, operation.getValueType(),
-						   chain, destinationLabel, flag);
-	case PROL16CC::LT:
-		return dag.getNode(PROL16ISD::JUMPC, debugLocation, operation.getValueType(),
-						   chain, destinationLabel, flag);
-	case PROL16CC::LE:
-		return dag.getNode(PROL16ISD::JUMPCZ, debugLocation, operation.getValueType(),
-						   chain, destinationLabel, flag);
-	default:
-		llvm_unreachable("Invalid PROL16 condition code");
-	}
-*/
 	/**
 	 * The compare instruction and the corresponding conditional jump must stay together so that
 	 * no instructions, which potentially influence the status flags set by compare, get inserted between them.
