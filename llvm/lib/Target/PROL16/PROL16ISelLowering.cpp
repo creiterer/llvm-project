@@ -1039,10 +1039,12 @@ MachineBasicBlock* PROL16TargetLowering::emitShiftWithImmediateCount(MachineInst
 	DebugLoc debugLocation = machineInstruction.getDebugLoc();
 	MachineFunction *machineFunction = machineBasicBlock->getParent();
 	TargetInstrInfo const &targetInstrInfo = *(machineFunction->getSubtarget().getInstrInfo());
+	MachineRegisterInfo &registerInfo = machineFunction->getRegInfo();
 
 	unsigned const destinationRegister = machineInstruction.getOperand(0).getReg();
 	unsigned const sourceRegister = machineInstruction.getOperand(1).getReg();
 	int64_t const shiftCount = machineInstruction.getOperand(2).getImm();
+	unsigned const tmpRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
 
 	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::MOVE), destinationRegister)
 		.addReg(sourceRegister);
@@ -1058,7 +1060,15 @@ MachineBasicBlock* PROL16TargetLowering::emitShiftWithImmediateCount(MachineInst
 				.addReg(destinationRegister);
 			break;
 		case PROL16::SRAi:
-			emitShiftRightArithmetical(machineInstruction, machineBasicBlock);
+			/// @see PROL16TargetLowering::emitShiftRightArithmetical
+			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::MOVE), tmpRegister)
+				.addReg(sourceRegister);
+
+			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::SHL), tmpRegister)
+				.addReg(tmpRegister, RegState::Kill);
+
+			BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::SHRC), destinationRegister)
+				.addReg(destinationRegister);
 			break;
 		}
 	}
