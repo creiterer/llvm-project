@@ -143,7 +143,8 @@ SDValue PROL16TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) cons
 	case ISD::GlobalAddress:
 		return lowerGlobalAddress(Op, DAG);
 	default:
-		report_fatal_error("Unsupported operation lowering");
+		Op.dump();
+		llvm_unreachable("Unsupported operation lowering");
 	}
 }
 
@@ -155,7 +156,7 @@ SDValue PROL16TargetLowering::LowerFormalArguments(SDValue chain, CallingConv::I
 	case CallingConv::Fast:
 		return lowerCArguments(chain, callingConvention, isVarArg, inputArguments, debugLocation, dag, inVals);
 	default:
-		report_fatal_error("Unsupported calling convention");
+		llvm_unreachable("Unsupported calling convention");
 	}
 }
 
