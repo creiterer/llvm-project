@@ -142,6 +142,8 @@ private:
 	 */
 	SDValue lowerConditionalSet(SDValue operation, SelectionDAG &dag) const;
 
+	SDValue lowerConditionOperand(SDValue const &operation, unsigned const operandNumber, SelectionDAG &dag) const;
+
 	SDValue emitCompare(SDValue &lhs, SDValue &rhs, PROL16CC::ConditionCode &targetConditionCode,
 						ISD::CondCode const conditionCode,
 						SDLoc const &debugLocation, SelectionDAG &dag) const;

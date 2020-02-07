@@ -336,10 +336,12 @@ SDValue PROL16TargetLowering::lowerConditionalSelect(SDValue operation, Selectio
 }
 
 SDValue PROL16TargetLowering::lowerConditionalSet(SDValue operation, SelectionDAG &dag) const {
-	SDValue lhs = operation.getOperand(0);
-	SDValue rhs = operation.getOperand(1);
-	ISD::CondCode conditionCode = cast<CondCodeSDNode>(operation.getOperand(2))->get();
 	SDLoc debugLocation(operation);
+
+	SDValue lhs = lowerConditionOperand(operation, 0, dag);
+	SDValue rhs = lowerConditionOperand(operation, 1, dag);
+
+	ISD::CondCode conditionCode = cast<CondCodeSDNode>(operation.getOperand(2))->get();
 
 	EVT valueType = operation.getValueType();
 	SDValue one = dag.getConstant(1, debugLocation, valueType);
@@ -351,6 +353,21 @@ SDValue PROL16TargetLowering::lowerConditionalSet(SDValue operation, SelectionDA
 	SDValue operands[] = {lhs, rhs, one, zero, targetConditionCodeValue};
 
 	return dag.getNode(PROL16ISD::SELECT_CC, debugLocation, valueType, operands);
+}
+
+SDValue PROL16TargetLowering::lowerConditionOperand(SDValue const &operation, unsigned const operandNumber, SelectionDAG &dag) const {
+	SDLoc debugLocation(operation);
+	SDValue operand = operation.getOperand(operandNumber);
+
+	if (operand.getValueType() != MVT::i16) {
+		if (operand.getOpcode() == ISD::TRUNCATE) {
+			operand = operand.getOperand(0);
+		} else if (operand.getOpcode() == ISD::Constant) {
+			operand = dag.getConstant(operation.getConstantOperandVal(operandNumber), debugLocation, MVT::i16);
+		}
+	}
+
+	return operand;
 }
 
 SDValue PROL16TargetLowering::emitCompare(SDValue &lhs, SDValue &rhs, PROL16CC::ConditionCode &targetConditionCode,
