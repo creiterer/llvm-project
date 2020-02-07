@@ -77,6 +77,7 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 	MachineBasicBlock &machineBasicBlock = *(machineInstruction.getParent());
 	MachineFunction &machineFunction = *(machineBasicBlock.getParent());
 	TargetInstrInfo const &targetInstrInfo = *(machineFunction.getSubtarget().getInstrInfo());
+	PROL16FrameLowering const * const frameLowering = getFrameLowering(machineFunction);
 
 	// get the frame index from the frame index operand
 	int const frameIndex = machineInstruction.getOperand(FIOperandNum).getIndex();
@@ -84,7 +85,12 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 	unsigned const frameRegister = getFrameRegister(machineFunction);
 
 	// get the frame offset (i.e. the offset relative to the frame pointer) of the object denoted by the frame index
-	int frameOffset = machineFunction.getFrameInfo().getObjectOffset(frameIndex);
+	int offset = machineFunction.getFrameInfo().getObjectOffset(frameIndex);
+
+	// no frame pointer -> stack pointer relative addressing
+	if (!frameLowering->hasFP(machineFunction)) {
+		offset += machineFunction.getFrameInfo().getStackSize();
+	}
 
 	/**
 	 * It is possible to do post-RA register scavenging after frame index elimination
@@ -140,22 +146,22 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 
 		if (nextMachineInstruction->getOpcode() == PROL16::LOADI) {
 			// fold the additional offset from 'loadi' into the frame offset
-			frameOffset += nextMachineInstruction->getOperand(1).getImm();
-			nextMachineInstruction->getOperand(1).setImm(calcAbsoluteFrameOffset(frameOffset));
+			offset += nextMachineInstruction->getOperand(1).getImm();
+			nextMachineInstruction->getOperand(1).setImm(calcAbsoluteOffset(offset));
 
 			std::advance(nextMachineInstruction, 1);
-			nextMachineInstruction->setDesc(targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD));
+			nextMachineInstruction->setDesc(targetInstrInfo.get(offset < 0 ? PROL16::SUB : PROL16::ADD));
 		} else {
 			unsigned const offsetRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
 
 			// insert instruction to load the offset into a register
 			BuildMI(machineBasicBlock, nextMachineInstruction, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-				.addImm(calcAbsoluteFrameOffset(frameOffset));
+				.addImm(calcAbsoluteOffset(offset));
 
 			unsigned const baseRegister = machineInstruction.getOperand(0).getReg();
 
 			// insert instruction to subtract the offset from the base register copy
-			BuildMI(machineBasicBlock, nextMachineInstruction, machineInstruction.getDebugLoc(), targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD), baseRegister)
+			BuildMI(machineBasicBlock, nextMachineInstruction, machineInstruction.getDebugLoc(), targetInstrInfo.get(offset < 0 ? PROL16::SUB : PROL16::ADD), baseRegister)
 				.addReg(baseRegister).addReg(offsetRegister, RegState::Kill);
 		}
 	} else if ((machineInstruction.getOpcode() == PROL16::STORE) || (machineInstruction.getOpcode() == PROL16::LOAD)) {
@@ -179,10 +185,10 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 
 		// insert instruction to load the offset into a register
 		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-			.addImm(calcAbsoluteFrameOffset(frameOffset));
+			.addImm(calcAbsoluteOffset(offset));
 
 		// since the stack grows down, the offset is usually negative!
-		if (frameOffset < 0) {
+		if (offset < 0) {
 			unsigned const tmpBaseRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
 
 			// insert instruction to copy the frame register into some free register
@@ -224,8 +230,8 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 
 		if (offsetOperand.isImm()) {
 			// fold any additional offset into the frame offset
-			frameOffset += offsetOperand.getImm();
-			if (frameOffset == 0) {
+			offset += offsetOperand.getImm();
+			if (offset == 0) {
 				return;
 			}
 		} else if (offsetOperand.isReg()) {
@@ -238,9 +244,9 @@ void PROL16RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI, int
 		unsigned const offsetRegister = machineFunction.getRegInfo().createVirtualRegister(&PROL16::GR16RegClass);
 
 		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(PROL16::LOADI), offsetRegister)
-			.addImm(calcAbsoluteFrameOffset(frameOffset));
+			.addImm(calcAbsoluteOffset(offset));
 
-		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(frameOffset < 0 ? PROL16::SUB : PROL16::ADD), targetRegister)
+		BuildMI(machineBasicBlock, MI, machineInstruction.getDebugLoc(), targetInstrInfo.get(offset < 0 ? PROL16::SUB : PROL16::ADD), targetRegister)
 			.addReg(targetRegister).addReg(offsetRegister, RegState::Kill);
 
 		machineInstruction.eraseFromParent();
@@ -263,7 +269,7 @@ bool PROL16RegisterInfo::requiresFrameIndexScavenging(MachineFunction const &MF)
 	return true;
 }
 
-unsigned PROL16RegisterInfo::calcAbsoluteFrameOffset(int const frameOffset) const {
+unsigned PROL16RegisterInfo::calcAbsoluteOffset(int const offset) const {
 	/**
 	 * Uneven frame offsets can occur with types > 16 bit!
 	 * For example, using a 32-bit integer resulted in:
@@ -285,5 +291,5 @@ unsigned PROL16RegisterInfo::calcAbsoluteFrameOffset(int const frameOffset) cons
 	 * 		alloc FI(4) at SP[-9]
 	 */
 
-	return std::abs(prol16::util::calcOffset(frameOffset));
+	return std::abs(prol16::util::calcOffset(offset));
 }
