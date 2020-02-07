@@ -1115,7 +1115,7 @@ MachineBasicBlock* PROL16TargetLowering::emitSelect(MachineInstr &machineInstruc
 	// %trueValue = ...
 	// comp r1, r2
 	// jump? resultMBB
-	// # fall through to falseMBB
+	// jump falseMBB
 	MachineBasicBlock * const trueMBB = machineBasicBlock;
 	MachineBasicBlock * const falseMBB = machineFunction->CreateMachineBasicBlock(basicBlock);
 	MachineBasicBlock * const resultMBB = machineFunction->CreateMachineBasicBlock(basicBlock);
@@ -1136,16 +1136,23 @@ MachineBasicBlock* PROL16TargetLowering::emitSelect(MachineInstr &machineInstruc
 	DebugLoc debugLocation = machineInstruction.getDebugLoc();
 	TargetInstrInfo const &targetInstrInfo = *machineFunction->getSubtarget().getInstrInfo();
 
-	unsigned const jumpTargetRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+	unsigned const resultMBBRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
+	unsigned const falseMBBRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
 
-	BuildMI(machineBasicBlock, debugLocation, targetInstrInfo.get(PROL16::LOADI), jumpTargetRegister)
+	BuildMI(machineBasicBlock, debugLocation, targetInstrInfo.get(PROL16::LOADI), resultMBBRegister)
 		.addMBB(resultMBB);
 
+	BuildMI(machineBasicBlock, debugLocation, targetInstrInfo.get(PROL16::LOADI), falseMBBRegister)
+		.addMBB(falseMBB);
+
 	BuildMI(machineBasicBlock, debugLocation, targetInstrInfo.get(PROL16::JUMPcc))
-		.addReg(jumpTargetRegister)
+		.addReg(resultMBBRegister)
 		.addReg(machineInstruction.getOperand(1).getReg())
 		.addReg(machineInstruction.getOperand(2).getReg())
 		.addImm(machineInstruction.getOperand(5).getImm());
+
+	BuildMI(machineBasicBlock, debugLocation, targetInstrInfo.get(PROL16::JUMP))
+		.addReg(falseMBBRegister);
 
 	// falseMBB:
 	// %falseValue = ...
