@@ -80,6 +80,7 @@ PROL16TargetLowering::PROL16TargetLowering(TargetMachine const &targetMachine, P
 	setOperationAction(ISD::SETCC, MVT::i8, Custom);
 	setOperationAction(ISD::SETCC, MVT::i16, Custom);
 
+//	setOperationAction(ISD::TRUNCATE, MVT::i8, Custom);
 //	setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
 
 	for (MVT const valueType : MVT::integer_valuetypes()) {
@@ -148,6 +149,21 @@ SDValue PROL16TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) cons
 		llvm_unreachable("Unsupported operation lowering");
 	}
 }
+
+/*
+void PROL16TargetLowering::ReplaceNodeResults(SDNode *node,
+											  SmallVectorImpl<SDValue> &results,
+											  SelectionDAG &dag) const {
+	switch (node->getOpcode()) {
+	case ISD::TRUNCATE:
+//		results.push_back(node->getOperand(0));
+		return;
+	default:
+		node->dump();
+		llvm_unreachable("Unsupported node for custom result legalization");
+	}
+}
+*/
 
 SDValue PROL16TargetLowering::LowerFormalArguments(SDValue chain, CallingConv::ID callingConvention, bool isVarArg,
 												   SmallVectorImpl<ISD::InputArg> const &inputArguments, SDLoc const &debugLocation,

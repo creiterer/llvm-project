@@ -81,6 +81,21 @@ public:
 	/// aborts.
 	SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
+	/// This callback is invoked when a node result type is illegal for the
+	/// target, and the operation was registered to use 'custom' lowering for that
+	/// result type.  The target places new result values for the node in Results
+	/// (their number and types must exactly match those of the original return
+	/// values of the node), or leaves Results empty, which indicates that the
+	/// node is not to be custom lowered after all.
+	///
+	/// If the target has no operations that require custom lowering, it need not
+	/// implement this.  The default implementation aborts.
+/*
+	void ReplaceNodeResults(SDNode *node,
+							SmallVectorImpl<SDValue> &results,
+							SelectionDAG &dag) const override;
+*/
+
 	/// This hook must be implemented to lower the incoming (formal) arguments,
 	/// described by the inputArguments array, into the specified DAG. The implementation
 	/// should fill in the inVals array with legal-type argument values, and
