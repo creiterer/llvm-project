@@ -231,6 +231,8 @@ MachineBasicBlock* PROL16TargetLowering::EmitInstrWithCustomInserter(MachineInst
 		return emitLoadWithDisplacement(MI, MBB);
 	case PROL16::CALLi:
 		return emitCallImmediate(MI, MBB);
+	case PROL16::CALLr:
+		return emitCallRegister(MI, MBB);
 	case PROL16::RETURN:
 		return emitReturn(MI, MBB);
 	case PROL16::BR:
@@ -789,12 +791,48 @@ MachineBasicBlock* PROL16TargetLowering::emitCallImmediate(MachineInstr &machine
 	MachineRegisterInfo &registerInfo = machineBasicBlock->getParent()->getRegInfo();
 	TargetInstrInfo const &targetInstrInfo = *(machineBasicBlock->getParent()->getSubtarget().getInstrInfo());
 
+	/**
+	 * For example:
+	 * 		CALLi @__prol16_print_string, implicit $rpc, implicit $rra, implicit $rsp, implicit $r4, implicit $r5, implicit $r6
+	 *
+	 * is emitted as:
+	 * 		%23:gr16 = LOADI @__prol16_print_string
+	 * 		JUMPcall killed %23:gr16, implicit $rpc, implicit $rra, implicit $rsp, implicit $r4, implicit $r5, implicit $r6
+	 */
 	unsigned const targetAddressRegister = registerInfo.createVirtualRegister(&PROL16::GR16RegClass);
 	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::LOADI), targetAddressRegister)
 		.add(machineInstruction.getOperand(0));
 
 	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::JUMPcall))
 		.addReg(targetAddressRegister, RegState::Kill)
+		// operands_begin() + 4 to skip the '@__prol16_print_string' and the implicitly added rpc, rra, and rsp (which also
+		// get implicitly added to 'JUMPcall').
+		.add(ArrayRef<MachineOperand>(machineInstruction.operands_begin() + 4, machineInstruction.operands_end()));
+
+	machineInstruction.eraseFromParent();
+
+	return machineBasicBlock;
+}
+
+MachineBasicBlock* PROL16TargetLowering::emitCallRegister(MachineInstr &machineInstruction,
+														  MachineBasicBlock *machineBasicBlock) const {
+	LLVM_DEBUG(dbgs() << "PROL16TargetLowering::emitCallRegister()\n");
+	LLVM_DEBUG(machineInstruction.dump());
+
+	DebugLoc debugLocation = machineInstruction.getDebugLoc();
+	TargetInstrInfo const &targetInstrInfo = *(machineBasicBlock->getParent()->getSubtarget().getInstrInfo());
+
+	/**
+	 * For example:
+	 * 		CALLr killed %20:gr16, implicit $rpc, implicit $rra, implicit $rsp, implicit $r4, implicit $r5
+	 *
+	 * is emitted as:
+	 * 		JUMPcall killed %20:gr16, implicit $rpc, implicit $rra, implicit $rsp, implicit $r4, implicit $r5
+	 */
+	BuildMI(*machineBasicBlock, machineInstruction, debugLocation, targetInstrInfo.get(PROL16::JUMPcall))
+		.add(machineInstruction.getOperand(0))
+		// operands_begin() + 4 to skip the 'killed %20:gr16' and the implicitly added rpc, rra, and rsp (which also
+		// get implicitly added to 'JUMPcall').
 		.add(ArrayRef<MachineOperand>(machineInstruction.operands_begin() + 4, machineInstruction.operands_end()));
 
 	machineInstruction.eraseFromParent();

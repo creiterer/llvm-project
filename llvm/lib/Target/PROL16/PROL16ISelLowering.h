@@ -188,6 +188,9 @@ private:
 	MachineBasicBlock* emitCallImmediate(MachineInstr &machineInstruction,
 										 MachineBasicBlock *machineBasicBlock) const;
 
+	MachineBasicBlock* emitCallRegister(MachineInstr &machineInstruction,
+										MachineBasicBlock *machineBasicBlock) const;
+
 	MachineBasicBlock* emitReturn(MachineInstr &machineInstruction,
 								  MachineBasicBlock *machineBasicBlock) const;
 

@@ -276,16 +276,15 @@ let isCall = 1, Uses = [RPC, RRA, RSP] in {
 	def JUMPcall : PROL16PseudoInstruction<(outs), (ins GR16:$dst),
 										   "# JUMPcall PSEUDO!",
 										   []>;
-				   
-//	def CALLr : PROL16PseudoInstruction<(outs), (ins GR16:$dst),
-//										"# CALLr PSEUDO!",
-//										[(PROL16Call GR16:$dst)]>,
-//				PseudoInstExpansion<(JUMP GR16:$dst)>;
 
 	let usesCustomInserter = 1 in {				
 		def CALLi : PROL16PseudoInstruction<(outs), (ins i16imm:$dst),
 											"# CALLi PSEUDO!",
 											[(PROL16Call imm:$dst)]>;
+											
+		def CALLr : PROL16PseudoInstruction<(outs), (ins GR16:$dst),
+											"# CALLr PSEUDO!",
+											[(PROL16Call GR16:$dst)]>;
 	}
 }
 
