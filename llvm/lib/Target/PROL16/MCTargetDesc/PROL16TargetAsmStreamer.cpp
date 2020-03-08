@@ -12,17 +12,23 @@
 
 #include "PROL16TargetAsmStreamer.h"
 
+#include "llvm/MC/MCSectionELF.h"
+#include "llvm/Support/Casting.h"
+
+#include <cassert>
+
 using namespace llvm;
 
 PROL16TargetAsmStreamer::PROL16TargetAsmStreamer(MCStreamer &mcStreamer/*, formatted_raw_ostream &os*/)
 : MCTargetStreamer(mcStreamer)/*, os(os)*/ {}
 
 void PROL16TargetAsmStreamer::changeSection(const MCSection *CurSection, MCSection *Section, const MCExpr *SubSection, raw_ostream &OS) {
-	// XXX PROL16: The standard PROL16 assembler isn't aware of sections (e.g. .text or .data)
-	// -> do not emit such section directives
-	// Otherwise, separation of .text and .data is meaningful, so there are 2 possibilities:
-	// 	1. modify the assembler so that it understands these directives
-	//	2. replace .text and .data with an appropriate ORG directive (e.g. ORG 0000h for .text and ORG 8000h for .data)
+	assert(Section != nullptr);
+
+	MCSectionELF const * const elfSection = cast<MCSectionELF>(Section);
+	if (elfSection->getSectionName() == ".text" || elfSection->getSectionName() == ".data") {
+		MCTargetStreamer::changeSection(CurSection, Section, SubSection, OS);
+	}
 }
 
 void PROL16TargetAsmStreamer::emitLabel(MCSymbol *Symbol) {
